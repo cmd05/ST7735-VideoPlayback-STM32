@@ -1,0 +1,15 @@
+lib_reference/
+Drivers/
+*.pdf
+CMakeCache.txt
+cmake_install.cmake
+build.ninja
+.mxproject
+STM32F401RETx_FLASH.ld
+CMakePresets.json
+compile_commands.json
+startup_stm32f401xe.s
+CMakeFiles/
+cmake/
+build/
+.vscode/
