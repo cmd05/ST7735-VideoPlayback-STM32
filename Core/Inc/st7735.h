@@ -46,9 +46,9 @@ extern SPI_HandleTypeDef ST7735_SPI_PORT;
 #define ST7735_IS_160X128 1
 #define ST7735_WIDTH      128
 #define ST7735_HEIGHT     160
-#define ST7735_XSTART     0
+#define ST7735_XSTART     0     // XSTART and YSTART are used only in implementation of ST7735_SetAddressWindow
 #define ST7735_YSTART     0
-#define ST7735_ROTATION   (0) // No rotation
+#define ST7735_ROTATION   (0)   // No rotation
 
 // -----------------------------------------------------------------------------
 

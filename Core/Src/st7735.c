@@ -167,12 +167,12 @@ void ST7735_Init(void) {
 }
 
 void ST7735_DrawPixel(uint16_t x, uint16_t y, uint16_t color) {
-    if(x >= ST7735_WIDTH || y >= ST7735_HEIGHT || x < ST7735_XSTART || y < ST7735_YSTART)
+    if(x >= ST7735_WIDTH || y >= ST7735_HEIGHT)
         return;
 
-    ST7735_Select();
-
+    ST7735_Select(); // select is necessary before set address window, since it uses SPI for ST7735_WriteCommand
     ST7735_SetAddressWindow(x, y, x, y);
+
     uint8_t data[] = { color >> 8, color & 0xFF};
     ST7735_WriteData(data, sizeof(data));
 
