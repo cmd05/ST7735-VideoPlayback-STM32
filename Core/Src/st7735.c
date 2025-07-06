@@ -178,3 +178,124 @@ void ST7735_DrawPixel(uint16_t x, uint16_t y, uint16_t color) {
 
     ST7735_Unselect();
 }
+
+static void ST7735_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor) {
+    uint32_t i, b, j;
+
+    ST7735_SetAddressWindow(x, y, x+font.width-1, y+font.height-1);
+
+    for(i = 0; i < font.height; i++) {
+        b = font.data[(ch - 32) * font.height + i];
+        for(j = 0; j < font.width; j++) {
+            if((b << j) & 0x8000)  {
+                uint8_t data[] = { color >> 8, color & 0xFF };
+                ST7735_WriteData(data, sizeof(data));
+            } else {
+                uint8_t data[] = { bgcolor >> 8, bgcolor & 0xFF };
+                ST7735_WriteData(data, sizeof(data));
+            }
+        }
+    }
+}
+
+void ST7735_WriteString(uint16_t x, uint16_t y, const char* str, FontDef font, uint16_t color, uint16_t bgcolor) {
+    ST7735_Select();
+
+    while(*str) {
+        if(x + font.width >= ST7735_WIDTH) {
+            x = 0;
+            y += font.height; // new line
+            
+            if(y + font.height >= ST7735_HEIGHT)
+                break;
+            
+            if(*str == ' ') {
+                // skip spaces in the beginning of a new line
+                str++;
+                continue;
+            }
+        }
+        
+        ST7735_WriteChar(x, y, *str, font, color, bgcolor);
+        x += font.width;
+        str++;
+    }
+
+    ST7735_Unselect();
+}
+
+void ST7735_FillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
+    if(x >= ST7735_WIDTH || y >= ST7735_HEIGHT) return;
+    if((x + w - 1) >= ST7735_WIDTH) w = ST7735_WIDTH - x;
+    if((y + h - 1) >= ST7735_HEIGHT) h = ST7735_HEIGHT - y;
+
+    ST7735_Select();
+    ST7735_SetAddressWindow(x, y, x+w-1, y+h-1);
+
+    uint8_t data[] = {color >> 8, color & 0xFF};
+    HAL_GPIO_WritePin(ST7735_DC_GPIO_Port, ST7735_DC_Pin, GPIO_PIN_SET);
+
+    for(int i = 0; i < h; i++) {
+        for(int j = 0; j < w; j++) {
+            HAL_SPI_Transmit(&ST7735_SPI_PORT, data, sizeof(data), HAL_MAX_DELAY);
+        }
+    }
+
+    ST7735_Unselect();
+}
+
+void ST7735_FillRectangleFast(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
+    if(x >= ST7735_WIDTH || y >= ST7735_HEIGHT) return;
+    if((x + w - 1) >= ST7735_WIDTH) w = ST7735_WIDTH - x;
+    if((y + h - 1) >= ST7735_HEIGHT) h = ST7735_HEIGHT - y;
+
+    ST7735_Select();
+    ST7735_SetAddressWindow(x, y, x+w-1, y+h-1);
+
+    // 128 * 160 * 2 ~ 40kilobytes for entire screen buffer
+
+    // prepare whole line in a single buffer
+    uint8_t pixel[] = {color >> 8, color & 0xFF};
+    uint16_t line_bufsize = w * sizeof(pixel);
+    uint8_t* line = malloc(line_bufsize);
+
+    for(int i = 0; i < w; i++)
+        memcpy(line + i * sizeof(pixel), pixel, sizeof(pixel));
+    
+    HAL_GPIO_WritePin(ST7735_DC_GPIO_Port, ST7735_DC_Pin, GPIO_PIN_SET);
+    for(int i = 0; i < h; i++)
+        HAL_SPI_Transmit(&ST7735_SPI_PORT, line, line_bufsize, HAL_MAX_DELAY);
+
+    free(line);
+    ST7735_Unselect();
+}
+
+void ST7735_FillScreen(uint16_t color) {
+    ST7735_FillRectangle(0, 0, ST7735_WIDTH, ST7735_HEIGHT, color);
+}
+
+void ST7735_FillScreenFast(uint16_t color) {
+    ST7735_FillRectangleFast(0, 0, ST7735_WIDTH, ST7735_HEIGHT, color);
+}
+
+void ST7735_DrawImage(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t* data) {
+    if(x >= ST7735_WIDTH || y >= ST7735_HEIGHT) return;
+    if((x + w - 1) >= ST7735_WIDTH) w = ST7735_WIDTH - x;
+    if((y + h - 1) >= ST7735_HEIGHT) h = ST7735_HEIGHT - y;
+
+    ST7735_Select();
+    ST7735_SetAddressWindow(x, y, x+w-1, y+h-1);
+    ST7735_WriteData((uint8_t*) data, sizeof(uint16_t) * w * h);
+    ST7735_Unselect();
+}
+
+void ST7735_InvertColors(bool invert) {
+    ST7735_WriteCommand(invert ? ST7735_INVON : ST7735_INVOFF);
+}
+
+void ST7735_SetGamma(GammaDef gamma) {
+    ST7735_Select();
+    ST7735_WriteCommand(ST7735_GAMSET);
+    ST7735_WriteData((uint8_t*) &gamma, sizeof(uint8_t));
+    ST7735_Unselect();
+}
