@@ -60,7 +60,18 @@ static const uint8_t init_cmds2[] = {
 };
 
 static const uint8_t init_cmds3[] = {
-        2,                              //  2 commands in list:
+        4,                              //  2 commands in list:
+        // Much better colors
+        ST7735_GMCTRP1, 16      , //  Gamma Adjustments (pos. polarity), 16 args, no delay:
+            0x02, 0x1c, 0x07, 0x12,
+            0x37, 0x32, 0x29, 0x2d,
+            0x29, 0x25, 0x2B, 0x39,
+            0x00, 0x01, 0x03, 0x10,
+        ST7735_GMCTRN1, 16      , //  Gamma Adjustments (neg. polarity), 16 args, no delay:
+            0x03, 0x1d, 0x07, 0x06,
+            0x2E, 0x2C, 0x29, 0x2D,
+            0x2E, 0x2E, 0x37, 0x3F,
+            0x00, 0x00, 0x02, 0x10,
         ST7735_NORON, DELAY_MARKER,     //  Normal display on, no args, w/delay
             10,                         //     10 ms delay
         ST7735_DISPON, DELAY_MARKER,    //  Main screen turn on, no args w/delay
