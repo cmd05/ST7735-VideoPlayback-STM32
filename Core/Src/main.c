@@ -66,17 +66,50 @@ static void MX_USART2_UART_Init(void);
 void init() {
   ST7735_Init();
 
+  ST7735_FillScreenFast(ST7735_BLACK);
+  HAL_Delay(1000);
+
   const char ready[] = "Ready\r\n";
   HAL_UART_Transmit(&huart2, (uint8_t*) ready, sizeof(ready) - 1, HAL_MAX_DELAY);
 }
 
+uint16_t g_colors[] = {ST7735_BLACK,
+ST7735_BLUE  ,
+ST7735_RED   ,
+ST7735_GREEN ,
+ST7735_CYAN  ,
+ST7735_MAGENTA,
+ST7735_YELLOW ,
+ST7735_WHITE  };
+int inc = 0;
+
 void loop() {
-    for(int y = 0; y < ST7735_HEIGHT; y++) {
-      for(int x = 0; x < (ST7735_WIDTH / 2); x++) {
-          ST7735_DrawPixel(x, y, (y % 2 ? ST7735_BLACK : ST7735_RED));
-          HAL_Delay(10);
-      }
-    }
+    // Check border
+    // ST7735_FillScreen(ST7735_GREEN);
+
+    // for(int x = 0; x < ST7735_WIDTH; x++) {
+    //     ST7735_DrawPixel(x, 0, ST7735_RED);
+    //     ST7735_DrawPixel(x, ST7735_HEIGHT-1, ST7735_RED);
+    // }
+
+    // for(int y = 0; y < ST7735_HEIGHT; y++) {
+    //     ST7735_DrawPixel(0, y, ST7735_RED);
+    //     ST7735_DrawPixel(ST7735_WIDTH-1, y, ST7735_RED);
+    // }
+
+    // HAL_Delay(3000);
+
+    // sizeof(test_img_128x128);
+    ST7735_DrawImage(0, 0, 128, 128, test_img_128x128);
+    HAL_Delay(1000);
+    
+    ST7735_WriteString(10, 140, "<3 aquila", Font_11x18, ST7735_RED, ST7735_BLACK);
+    HAL_Delay(200);
+
+    // ST7735_FillScreenFast(g_colors[inc]);
+    // HAL_Delay(100);
+    // inc++;
+    // if(inc > 7) inc = 0;
 }
 
 /* USER CODE END 0 */
