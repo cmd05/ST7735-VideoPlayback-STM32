@@ -7,7 +7,8 @@ typedef struct VideoInformation {
 } VideoInformation;
 
 void VideoInformation_default_init(VideoInformation* vid_info);
-void VideoInformation_get_extension(const char* filename);
-void SD_get_vid_info();
+const char* VideoInformation_get_extension(const char* filename);
+FRESULT SD_get_vid_info(VideoInformation* vid_info);
+void SD_unmount();
 
 void sd_test();

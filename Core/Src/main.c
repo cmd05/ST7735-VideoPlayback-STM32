@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2025 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -22,15 +22,14 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdarg.h>  //for va_list var arg functions
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h> //for va_list var arg functions
 
-#include "st7735.h"
 #include "fonts.h"
-#include "testimg.h"
-
 #include "sd.h"
+#include "st7735.h"
+// #include "testimg.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,34 +71,151 @@ void myprintf(const char *fmt, ...);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void myprintf(const char *fmt, ...) {
-  static char buffer[256];
-  va_list args;
-  va_start(args, fmt);
-  vsnprintf(buffer, sizeof(buffer), fmt, args);
-  va_end(args);
+    static char buffer[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
 
-  int len = strlen(buffer);
-  HAL_UART_Transmit(&huart2, (uint8_t*)buffer, len, -1);
+    int len = strlen(buffer);
+    HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, -1);
+}
+
+char g_image_buff[64];
+
+FRESULT draw_image_sd(const char* fname) {
+    FIL file;
+    FRESULT res = f_open(&file, "/vid/test.txt", FA_READ);
+    
+    if(res != FR_OK) {
+        f_close(&file);
+        return -1;
+    }
+
+    myprintf("I was able to open the %s for reading!\r\n", "/vid/test.txt");
+
+    //Read 30 bytes from "test.txt" on the SD card
+    BYTE readBuf[50];
+
+    //We can either use f_read OR f_gets to get data out of files
+    //f_gets is a wrapper on f_read that does some string formatting for us
+    TCHAR * rres = f_gets((TCHAR * ) readBuf, sizeof(readBuf), &file);
+    if (rres != 0) {
+        myprintf("Read string from %s contents: %s\r\n", "/vid/test.txt", readBuf);
+    } else {
+        myprintf("f_gets error (%i)\r\n", res);
+    }
+
+    f_close(&file);
+    return FR_OK;
+
+    /// -----------------
+
+    // FIL file;
+    // FRESULT res = f_open(&file, fname, FA_READ);
+    
+    if(res != FR_OK) {
+        f_close(&file);
+        return -1;
+    }
+
+    myprintf("I was able to open the %s for reading!\r\n", fname);
+
+    UINT bytesRead;
+    BYTE header[34];
+
+    res = f_read(&file, header, sizeof(header), &bytesRead);
+    if(res != FR_OK) {
+        f_close(&file);
+        return -2;
+    }
+
+    if((header[0] != 0x42) || (header[1] != 0x4D)) {
+        f_close(&file);
+        return -3;
+    }
+
+    uint32_t imageOffset = header[10] | (header[11] << 8) | (header[12] << 16) | (header[13] << 24);
+    uint32_t imageWidth = header[18] | (header[19] << 8) | (header[20] << 16) | (header[21] << 24);
+    uint32_t imageHeight = header[22] | (header[23] << 8) | (header[24] << 16) | (header[25] << 24);
+    uint16_t imagePlanes = header[26] | (header[27] << 8);
+    uint16_t imageBitsPerPixel = header[28] | (header[29] << 8);
+    uint32_t imageCompression = header[30] | (header[31] << 8) | (header[32] << 16) | (header[33] << 24);
+
+    myprintf("Pixels offset: %lu\r\n ", imageOffset);
+    myprintf("WxH: %lux%lu\r\n ", imageWidth, imageHeight);
+    myprintf("Planes: %d\r\n ", imagePlanes);
+    myprintf("Bits per pixel: %d\r\n ", imageBitsPerPixel);
+    myprintf("Compression: %d\r\n ", imageCompression);
+
+    if((imageWidth > ST7735_WIDTH) || (imageHeight > ST7735_HEIGHT)) {
+        f_close(&file);
+        return -4;
+    }
+
+    if((imagePlanes != 1) || (imageBitsPerPixel != 24) || (imageCompression != 0)) {
+        f_close(&file);
+        return -5;
+    }
+
+    res = f_lseek(&file, imageOffset);
+    if(res != FR_OK) {
+        myprintf("f_lseek() failed, res = %d\r\n ", res);
+        f_close(&file);
+        return -6;
+    }
+
+    // row size is aligned to 4 bytes
+    uint8_t imageRow[(ST7735_WIDTH * 3 + 3) & ~3];
+    for(uint32_t y = 0; y < imageHeight; y++) {
+        uint32_t rowIdx = 0;
+        res = f_read(&file, imageRow, sizeof(imageRow), &bytesRead);
+        if(res != FR_OK) {
+            myprintf("f_read() failed, res = %d\r\n", res);
+            f_close(&file);
+            return -7;
+        }
+
+        for(uint32_t x = 0; x < imageWidth; x++) {
+            uint8_t b = imageRow[rowIdx++];
+            uint8_t g = imageRow[rowIdx++];
+            uint8_t r = imageRow[rowIdx++];
+            uint16_t color565 = ST7735_COLOR565(r, g, b);
+            ST7735_DrawPixel(x, imageHeight - y - 1, color565);
+        }
+    }
+
+    res = f_close(&file);
+    if(res != FR_OK) {
+        myprintf("f_close() failed, res = %d\r\n", res);
+        return -8;
+    }
+
+    return 0;
 }
 
 void init() {
-  ST7735_Init();
+    ST7735_Init();
 
-  ST7735_FillScreenFast(ST7735_BLACK);
-  HAL_Delay(1000);
+    ST7735_FillScreenFast(ST7735_BLACK);
+    HAL_Delay(1000);
 
-  const char ready[] = "Ready\r\n";
-  HAL_UART_Transmit(&huart2, (uint8_t*) ready, sizeof(ready) - 1, HAL_MAX_DELAY);
+    const char ready[] = "Ready\r\n";
+    HAL_UART_Transmit(&huart2, (uint8_t *)ready, sizeof(ready) - 1, HAL_MAX_DELAY);
+
+    // SD Test
+    VideoInformation vid_info;
+    VideoInformation_default_init(&vid_info);
+
+    FRESULT res = SD_get_vid_info(&vid_info);
+    if(res != FR_OK) {
+        while(1);
+    }
 }
 
-uint16_t g_colors[] = {ST7735_BLACK,
-ST7735_BLUE  ,
-ST7735_RED   ,
-ST7735_GREEN ,
-ST7735_CYAN  ,
-ST7735_MAGENTA,
-ST7735_YELLOW ,
-ST7735_WHITE  };
+uint16_t g_colors[] = {ST7735_BLACK,  ST7735_BLUE, ST7735_RED,
+                       ST7735_GREEN,  ST7735_CYAN, ST7735_MAGENTA,
+                       ST7735_YELLOW, ST7735_WHITE};
 int inc = 0;
 
 void loop() {
@@ -119,11 +235,21 @@ void loop() {
     // HAL_Delay(3000);
 
     // sizeof(test_img_128x128);
-    ST7735_DrawImage(0, 0, 128, 128, test_img_128x128);
-    HAL_Delay(1000);
-    
-    ST7735_WriteString(10, 140, "<3 aquila", Font_11x18, ST7735_RED, ST7735_BLACK);
-    HAL_Delay(200);
+
+    // // main test
+    // ST7735_DrawImage(0, 0, 128, 128, test_img_128x128);
+    // HAL_Delay(1000);
+
+    // ST7735_WriteString(10, 140, "<3 aquila", Font_11x18, ST7735_RED,
+    //                    ST7735_BLACK);
+    // HAL_Delay(200);
+
+    // draw_image_sd("/vid/test.txt");
+    // HAL_Delay(1000);
+    // draw_image_sd("/vid/1.txt");
+    // HAL_Delay(1000);
+    // draw_image_sd("/vid/1.bmp");
+    // HAL_Delay(1000);
 
     // ST7735_FillScreenFast(g_colors[inc]);
     // HAL_Delay(100);
@@ -167,20 +293,18 @@ int main(void)
   MX_SPI2_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  init();
-  sd_test();
+    init();
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+    while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    loop();
-  }
+        // loop();
+    }
   /* USER CODE END 3 */
 }
 
@@ -407,11 +531,11 @@ static void MX_GPIO_Init(void)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+    /* User can add his own implementation to report the HAL error return state
+     */
+    __disable_irq();
+    while (1) {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -426,8 +550,9 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+    /* User can add his own implementation to report the file name and line
+       number, ex: printf("Wrong parameters value: file %s on line %d\r\n",
+       file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
