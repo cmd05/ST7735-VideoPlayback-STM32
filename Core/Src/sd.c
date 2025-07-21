@@ -5,6 +5,9 @@
 
 #include "st7735.h"
 
+#define ENABLE_LOG 1
+#define IFLOG if(ENABLE_LOG)
+
 void VideoInformation_default_init(VideoInformation* vid_info) {
     vid_info->vid_extension = "BMP";
     vid_info->vid_dir = "/vid";
@@ -51,6 +54,26 @@ static FRESULT get_vid_info(VideoInformation* vid_info) {
     }
 
     return res;
+}
+
+typedef enum MYTIMER_ARG {
+    MYTIMER_START,
+    MYTIMER_END,
+} MYTIMER_ARG;
+
+static uint32_t MYTIMER_measure_time(MYTIMER_ARG arg) {
+    static uint32_t start_time = 0;
+    static uint32_t end_time = 0;
+
+    if(arg == MYTIMER_START) {
+        start_time = HAL_GetTick();
+        return 0;
+    }
+
+    if(arg == MYTIMER_END) {
+        end_time = HAL_GetTick();
+        return (end_time - start_time);
+    }
 }
 
 FRESULT SD_get_vid_info(VideoInformation* vid_info) {
@@ -122,9 +145,16 @@ FRESULT SD_get_vid_info(VideoInformation* vid_info) {
     uint32_t frame_read_num_bytes = frame_read_len * sizeof(uint8_t);
 
     uint8_t* frame_data_arr = malloc(frame_read_num_bytes);
+    
+    uint32_t elapsed_time = 0; // time measurements
 
     for(int i = 0; i < vid_num_frames; i++) {
+        IFLOG MYTIMER_measure_time(MYTIMER_START);
+
         res = f_read(&file, frame_data_arr, frame_read_num_bytes, &bytes_read);
+        
+        IFLOG elapsed_time = MYTIMER_measure_time(MYTIMER_END);
+        IFLOG myprintf("Frame read time: %dms\r\n", elapsed_time);
 
         if(res != FR_OK) {
             myprintf("Failed to read frame %d\r\n", i);
@@ -134,14 +164,17 @@ FRESULT SD_get_vid_info(VideoInformation* vid_info) {
         
         // check START flag
         if(memcmp(frame_data_arr, START_FLAG_VAL, START_FLAG_LEN) != 0) {
-            myprintf("START_FLAG not matching for frame %d\r\n. FRAME_FLAG=%.3s", i, frame_data_arr);
+            myprintf("START_FLAG not matching for frame %d. FRAME_FLAG=%.3s\r\n", i, frame_data_arr);
             // f_close(&file);
             return FR_INT_ERR;
         }
 
+        IFLOG MYTIMER_measure_time(MYTIMER_START);
+
         ST7735_DrawImage(0, 0, vid_width, vid_height, (frame_data_arr + START_FLAG_LEN));
 
-        HAL_Delay(10);
+        IFLOG elapsed_time = MYTIMER_measure_time(MYTIMER_END);
+        IFLOG myprintf("Frame draw time: %dms\r\n", elapsed_time);
     }
 
     HAL_Delay(1000);
