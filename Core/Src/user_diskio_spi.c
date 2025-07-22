@@ -41,7 +41,9 @@ extern SPI_HandleTypeDef SD_SPI_HANDLE;
 #define CS_HIGH()	{HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);}
 #define CS_LOW()	{HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET);}
 
-#define USE_DMA 0
+BYTE spi_multi_tx_data[512]; // max btr is 512
+
+#define USE_DMA
 
 #ifdef USE_DMA
 volatile int dma_tx_done = 0;
@@ -121,16 +123,13 @@ BYTE xchg_spi (
 )
 {
 	BYTE rxDat;
-#ifdef USE_DMA
-	dma_txrx_done = 0;
-	HAL_SPI_TransmitReceive_DMA(&SD_SPI_HANDLE, &dat, &rxDat, 1);
-	while(!dma_txrx_done);
-#else
     HAL_SPI_TransmitReceive(&SD_SPI_HANDLE, &dat, &rxDat, 1, 50);
-#endif
 	return rxDat;
 }
 
+static void init_spi_multi_tx_data() {
+	for(int i = 0; i < 512; i++) spi_multi_tx_data[i] = 0xFF; // Initialize global tx data
+}
 
 /* Receive multiple byte */
 static
@@ -139,9 +138,13 @@ void rcvr_spi_multi (
 	UINT btr		/* Number of bytes to receive (even number) */
 )
 {
-	for(UINT i=0; i<btr; i++) {
-		*(buff+i) = xchg_spi(0xFF);
-	}
+#ifdef USE_DMA
+	dma_txrx_done = 0;
+	HAL_SPI_TransmitReceive_DMA(&SD_SPI_HANDLE, spi_multi_tx_data, buff, btr);
+	while(!dma_txrx_done);
+#else
+    HAL_SPI_TransmitReceive(&SD_SPI_HANDLE, spi_multi_tx_data, buff, btr, 50);
+#endif
 }
 
 
@@ -386,6 +389,8 @@ inline DSTATUS USER_SPI_initialize (
 	if (ty) {			/* OK */
 		FCLK_FAST();			/* Set fast clock */
 		Stat &= ~STA_NOINIT;	/* Clear STA_NOINIT flag */
+
+		init_spi_multi_tx_data();
 	} else {			/* Failed */
 		Stat = STA_NOINIT;
 	}
