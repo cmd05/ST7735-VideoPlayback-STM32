@@ -41,6 +41,21 @@ extern SPI_HandleTypeDef SD_SPI_HANDLE;
 #define CS_HIGH()	{HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);}
 #define CS_LOW()	{HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET);}
 
+#define USE_DMA 0
+
+#ifdef USE_DMA
+volatile int dma_tx_done = 0;
+volatile int dma_txrx_done = 0;
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi == &SD_SPI_HANDLE) dma_tx_done = 1;
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+	if(hspi == &SD_SPI_HANDLE) dma_txrx_done = 1;
+}
+#endif
+
 /*--------------------------------------------------------------------------
 
    Module Private Functions
@@ -106,8 +121,14 @@ BYTE xchg_spi (
 )
 {
 	BYTE rxDat;
+#ifdef USE_DMA
+	dma_txrx_done = 0;
+	HAL_SPI_TransmitReceive_DMA(&SD_SPI_HANDLE, &dat, &rxDat, 1);
+	while(!dma_txrx_done);
+#else
     HAL_SPI_TransmitReceive(&SD_SPI_HANDLE, &dat, &rxDat, 1, 50);
-    return rxDat;
+#endif
+	return rxDat;
 }
 
 
@@ -132,7 +153,13 @@ void xmit_spi_multi (
 	UINT btx			/* Number of bytes to send (even number) */
 )
 {
+#ifdef USE_DMA
+	dma_tx_done = 0;
+	HAL_SPI_Transmit_DMA(&SD_SPI_HANDLE, buff, btx);
+	while(!dma_tx_done);
+#else
 	HAL_SPI_Transmit(&SD_SPI_HANDLE, buff, btx, HAL_MAX_DELAY);
+#endif
 }
 #endif
 
