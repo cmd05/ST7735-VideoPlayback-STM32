@@ -157,7 +157,7 @@ FRESULT SD_get_vid_info(VideoInformation* vid_info) {
         IFLOG myprintf("Frame read time: %dms\r\n", elapsed_time);
 
         if(res != FR_OK) {
-            myprintf("Failed to read frame %d\r\n", i);
+            myprintf("Failed to read frame %d\r\n. res=%d", i, res);
             break;
         }
         
