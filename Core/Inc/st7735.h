@@ -43,12 +43,20 @@ extern SPI_HandleTypeDef ST7735_SPI_PORT;
 // Resolution: 128 * 160 (GM[2:0] = “011”)
 // Height: 1.8"
 // Plastic overlay: GREENTAB
-#define ST7735_IS_160X128 1
-#define ST7735_WIDTH      128
-#define ST7735_HEIGHT     160
 #define ST7735_XSTART     0     // XSTART and YSTART are used only in implementation of ST7735_SetAddressWindow
 #define ST7735_YSTART     0
-#define ST7735_ROTATION   (0)   // No rotation
+
+#define ST7735_USE_LANDSCAPE // Uncomment to use landscape orientation
+#ifndef ST7735_USE_LANDSCAPE
+// Portrait orientation (default)
+#define ST7735_WIDTH      128
+#define ST7735_HEIGHT     160
+#define ST7735_ROTATION   (0)
+#else
+#define ST7735_ROTATION   (ST7735_MADCTL_MV | ST7735_MADCTL_MY)
+#define ST7735_WIDTH      160
+#define ST7735_HEIGHT     128
+#endif
 
 // -----------------------------------------------------------------------------
 

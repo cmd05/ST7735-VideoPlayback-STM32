@@ -170,6 +170,7 @@ def accept_args():
     parser.add_argument("video_input", help="Path to input video")
     parser.add_argument("--start", help="Start time MM:SS", default=None)
     parser.add_argument("--end", help="End time MM:SS", default=None)
+    parser.add_argument("--landscape", action="store_true", help="Use landscape mode for display")
     
     args = parser.parse_args()
     return args
@@ -185,6 +186,10 @@ class Config:
 def main():
     config = Config()
     args = accept_args()
+
+    if args.landscape:
+        print("Using landscape mode")
+        config.target_width, config.target_height = config.target_height, config.target_width
 
     start_sec = time_str_to_seconds(args.start)  
     end_sec = time_str_to_seconds(args.end)      
