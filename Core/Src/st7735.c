@@ -2,6 +2,9 @@
 #include "malloc.h"
 #include "string.h"
 
+#define USE_DMA
+volatile int ST7735_dma_tx_done = 0;
+
 // delay marker has only MSbit set. number_of_args will not use the MSB
 // if only DELAY_MARKER, then number_of_args will be zero
 #define DELAY_MARKER 0x80
@@ -102,7 +105,13 @@ static void ST7735_WriteCommand(uint8_t cmd) {
 
 static void ST7735_WriteData(uint8_t* buff, size_t buff_size) {
     HAL_GPIO_WritePin(ST7735_DC_GPIO_Port, ST7735_DC_Pin, GPIO_PIN_SET);
+#ifdef USE_DMA
+	ST7735_dma_tx_done = 0;
+    HAL_SPI_Transmit_DMA(&ST7735_SPI_PORT, buff, buff_size);
+    while(!ST7735_dma_tx_done);
+#else
     HAL_SPI_Transmit(&ST7735_SPI_PORT, buff, buff_size, HAL_MAX_DELAY);
+#endif
 }
 
 static void ST7735_ExecuteCommandList(const uint8_t* cmd_arr) {
@@ -238,7 +247,13 @@ void ST7735_FillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16
 
     for(int i = 0; i < h; i++) {
         for(int j = 0; j < w; j++) {
+#ifdef USE_DMA
+            ST7735_dma_tx_done = 0;
+            HAL_SPI_Transmit_DMA(&ST7735_SPI_PORT, data, sizeof(data));
+            while(!ST7735_dma_tx_done);
+#else
             HAL_SPI_Transmit(&ST7735_SPI_PORT, data, sizeof(data), HAL_MAX_DELAY);
+#endif
         }
     }
 
@@ -264,8 +279,16 @@ void ST7735_FillRectangleFast(uint16_t x, uint16_t y, uint16_t w, uint16_t h, ui
         memcpy(line + i * sizeof(pixel), pixel, sizeof(pixel));
     
     HAL_GPIO_WritePin(ST7735_DC_GPIO_Port, ST7735_DC_Pin, GPIO_PIN_SET);
-    for(int i = 0; i < h; i++)
+
+    for(int i = 0; i < h; i++) {
+#ifdef USE_DMA
+        ST7735_dma_tx_done = 0;
+        HAL_SPI_Transmit_DMA(&ST7735_SPI_PORT, line, line_bufsize);
+        while(!ST7735_dma_tx_done);
+#else
         HAL_SPI_Transmit(&ST7735_SPI_PORT, line, line_bufsize, HAL_MAX_DELAY);
+#endif
+    }
 
     free(line);
     ST7735_Unselect();

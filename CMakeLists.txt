@@ -54,6 +54,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ./Core/Src/user_diskio_spi.c
     ./Core/Src/sd_playback.c
     ./Core/Src/utils.c
+    ./Core/Src/user_spi_callbacks.c
 )
 
 # Add include paths

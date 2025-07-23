@@ -41,22 +41,11 @@ extern SPI_HandleTypeDef SD_SPI_HANDLE;
 #define CS_HIGH()	{HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_SET);}
 #define CS_LOW()	{HAL_GPIO_WritePin(SD_CS_GPIO_Port, SD_CS_Pin, GPIO_PIN_RESET);}
 
-BYTE spi_multi_tx_data[512]; // max btr is 512
-
 #define USE_DMA
 
-#ifdef USE_DMA
-volatile int dma_tx_done = 0;
-volatile int dma_txrx_done = 0;
-
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi) {
-	if(hspi == &SD_SPI_HANDLE) dma_tx_done = 1;
-}
-
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
-	if(hspi == &SD_SPI_HANDLE) dma_txrx_done = 1;
-}
-#endif
+BYTE spi_multi_tx_data[512]; // max btr is 512
+volatile int SD_dma_tx_done = 0;
+volatile int SD_dma_txrx_done = 0;
 
 /*--------------------------------------------------------------------------
 
@@ -139,9 +128,9 @@ void rcvr_spi_multi (
 )
 {
 #ifdef USE_DMA
-	dma_txrx_done = 0;
+	SD_dma_txrx_done = 0;
 	HAL_SPI_TransmitReceive_DMA(&SD_SPI_HANDLE, spi_multi_tx_data, buff, btr);
-	while(!dma_txrx_done);
+	while(!SD_dma_txrx_done);
 #else
     HAL_SPI_TransmitReceive(&SD_SPI_HANDLE, spi_multi_tx_data, buff, btr, 50);
 #endif
@@ -157,9 +146,9 @@ void xmit_spi_multi (
 )
 {
 #ifdef USE_DMA
-	dma_tx_done = 0;
+	SD_dma_tx_done = 0;
 	HAL_SPI_Transmit_DMA(&SD_SPI_HANDLE, buff, btx);
-	while(!dma_tx_done);
+	while(!SD_dma_tx_done);
 #else
 	HAL_SPI_Transmit(&SD_SPI_HANDLE, buff, btx, HAL_MAX_DELAY);
 #endif
