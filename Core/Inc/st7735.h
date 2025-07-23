@@ -46,7 +46,7 @@ extern SPI_HandleTypeDef ST7735_SPI_PORT;
 #define ST7735_XSTART     0     // XSTART and YSTART are used only in implementation of ST7735_SetAddressWindow
 #define ST7735_YSTART     0
 
-#define ST7735_USE_LANDSCAPE // Uncomment to use landscape orientation
+// #define ST7735_USE_LANDSCAPE // Uncomment to use landscape orientation
 #ifndef ST7735_USE_LANDSCAPE
 // Portrait orientation (default)
 #define ST7735_WIDTH      128
