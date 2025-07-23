@@ -44,8 +44,9 @@ static const uint8_t init_cmds1[] = {
 
 // Since we have set MV for MADCTL; CASET and RASET will be initialized based on it,
 // so these commands can be skipped.
+
 // The address window is based on CASET and RASET
-// We can specify other values for them as per our requirements
+// ST7735_SetAddressWindow() will reset CASET and RASET according to its arguments
 static const uint8_t init_cmds2[] = {
     2,                      // 2 commands in list
 

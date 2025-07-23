@@ -1,4 +1,3 @@
-/* vim: set ai et ts=4 sw=4: */
 #include "fonts.h"
 
 static const uint16_t Font7x10 [] = {
