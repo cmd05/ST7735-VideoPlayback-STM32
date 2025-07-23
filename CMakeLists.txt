@@ -52,7 +52,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ./Core/Src/st7735.c
 
     ./Core/Src/user_diskio_spi.c
-    ./Core/Src/sd.c
+    ./Core/Src/sd_playback.c
+    ./Core/Src/utils.c
 )
 
 # Add include paths
