@@ -174,7 +174,7 @@ def time_str_to_seconds(tstr):
         exit()
 
 def accept_args():
-    parser = argparse.ArgumentParser(description="Convert video to frames.")
+    parser = argparse.ArgumentParser(description="Convert video to binary format for display.")
     parser.add_argument("video_input", help="Path to input video")
     parser.add_argument("--start", help="Start time MM:SS", default=None)
     parser.add_argument("--end", help="End time MM:SS", default=None)

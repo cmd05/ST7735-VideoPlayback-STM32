@@ -1,8 +1,6 @@
 # ST7735-VideoPlayback-STM32
 
-A library to display for smooth video playback on a ST7735 display. It uses an SD card module for video storage. The library can be used to streams videos at **33-35FPS**.
-
-The project originally started as developing drivers for the ST7735 display, but later I decided to expand it to play videos optimally.
+A library for smooth video playback on a ST7735 display. It uses an SD card module for video storage. The library can be used to streams videos at **33-35FPS**.
 
 ## Showcase
 
@@ -53,12 +51,12 @@ The python script is located at `video_converter/video_converter.py`. It is used
 
 The output binary `video.bin` is generated in `video_converter/video_output`.
 ```
-python video_converter.py -h
+$ python video_converter.py -h
 usage: video_converter.py [-h] [--start START]
                           [--end END] [--landscape]
                           video_input
 
-Convert video to frames.
+Convert video to binary format for display.
 
 positional arguments:
   video_input    Path to input video
