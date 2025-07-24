@@ -1,6 +1,0 @@
-changed power cable
-tightened sd cables
-
-works with seperate sd
-
-tightly insert pins to breadboard. lifted up little.

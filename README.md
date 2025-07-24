@@ -75,7 +75,7 @@ The video binary follows the below format. This section can be used as a referen
 The file consists of a header followed by per frame data.
 ```
 Header:
-[video_width HB][video_width LB][video_height HB][video_height LB][num_frames HB][num_frames HB]
+[video_width HB][video_width LB][video_height HB][video_height LB][num_frames HB][num_frames LB]
 
 Per Frame:
 ['F']['R']['M'][Pixel Data ...]
