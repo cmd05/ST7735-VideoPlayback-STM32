@@ -110,7 +110,15 @@ def vid_to_frames(video_path, output_dir, target_width, target_height, start_tim
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))  
     duration_sec = total_frames / fps  
 
-    if duration_sec > 60:  # Confirm for long videos
+    duration_clip = duration_sec
+    if start_time is not None:
+        duration_clip -= start_time
+    if end_time is not None:
+        duration_clip -= (duration_sec - end_time)
+
+    print("Clip duration: ", duration_clip, "s")
+
+    if duration_clip > 60:  # Confirm for long videos
         confirm = input("Converting large video clip. Confirm? [y/N]: ")
         if confirm.strip().lower() != 'y':
             print("Aborted.")
