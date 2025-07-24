@@ -115,6 +115,7 @@ Possible optimizations:
 - FATFS
 - [cubeide-sd-card](https://github.com/kiwih/cubeide-sd-card) for the FATFS User SPI drivers
 - [stm32-st7735](https://github.com/afiskon/stm32-st7735)
+- [LVGL's Image Converter](https://github.com/lvgl/lvgl/blob/master/scripts/LVGLImage.py)
 
 ## References
 - [ST7735 Datasheet](https://www.displayfuture.com/Display/datasheet/controller/ST7735.pdf)
