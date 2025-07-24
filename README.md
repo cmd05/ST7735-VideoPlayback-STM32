@@ -15,24 +15,24 @@ Watch the Showcase on Youtube:
 ![](./assets/cubemx-pinout.png)
 
 ST7735 Display:
-```
-LED (Backlight)     - 5V
-SCK (CLK)           - SPI1_SCK
-SDA                 - SPI1_MOSI
-DC (Data/Command)   - PA9
-RESET               - PC7
-CS (Chip Select)    - PB6
-GND                 - GND
-VCC                 - 5V
-```
+| **Display Pin**     | **Connection**  |
+|---------------------|-----------------|
+| LED (Backlight)     | 5V              |
+| SCK (CLK)           | SPI1_SCK        |
+| SDA                 | SPI1_MOSI       |
+| DC (Data/Command)   | PA9             |
+| RESET               | PC7             |
+| CS (Chip Select)    | PB6             |
+| GND                 | GND             |
+| VCC                 | 5V              |
 
 SD Card Module:
-```
-SD_CS               - PB1
-SD_MOSI             - SPI2_MOSI
-SD_MISO             - SPI2_MISO
-SD_SCK              - SPI2_SCK
-```
+| **SD Module Pin**    | **Connection**  |
+|----------------------|-----------------|
+| SD_CS                | PB1             |
+| SD_MOSI              | SPI2_MOSI       |
+| SD_MISO              | SPI2_MISO       |
+| SD_SCK               | SPI2_SCK        |
 
 If you are using the on-display SD card module, VCC and GND are used from the display pin connections.
 
